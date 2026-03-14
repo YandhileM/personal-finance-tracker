@@ -39,7 +39,7 @@ exports.handler = async (event) => {
         spreadsheetId,
         range: payload.range,
         valueInputOption: 'USER_ENTERED',
-        requestBody: { values: payload.values },
+        requestBody: { values: [payload.values] },
       })
       return { statusCode: 200, headers, body: JSON.stringify({ success: true }) }
     }
@@ -50,7 +50,7 @@ exports.handler = async (event) => {
         spreadsheetId,
         range: payload.range,
         valueInputOption: 'USER_ENTERED',
-        requestBody: { values: payload.values },
+        requestBody: { values: [payload.values] },
       })
       return { statusCode: 200, headers, body: JSON.stringify({ success: true }) }
     }
