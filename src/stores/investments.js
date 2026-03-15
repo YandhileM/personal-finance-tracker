@@ -8,6 +8,8 @@ export const useInvestmentsStore = defineStore('investments', () => {
   const hasContributionThisMonth = ref(true)
   const loading = ref(false)
   const error = ref(null)
+  const weeklySnapshots = ref([])
+  const snapshotsLoading = ref(false)
 
   async function fetchBalances() {
     loading.value = true
@@ -56,14 +58,44 @@ export const useInvestmentsStore = defineStore('investments', () => {
     await checkThisMonthContribution()
   }
 
+  async function fetchWeeklySnapshots() {
+    snapshotsLoading.value = true
+    try {
+      const rows = await readRange('WeeklySnapshots!A2:E210')
+      weeklySnapshots.value = rows
+        .filter((row) => {
+          if (!row[0]) return false
+          const allZero = [row[1], row[2], row[3], row[4]].every(
+            (v) => !v || parseFloat(v) === 0,
+          )
+          return !allZero
+        })
+        .sort((a, b) => new Date(a[0]) - new Date(b[0]))
+        .map((row) => ({
+          week: row[0],
+          savings: parseFloat(row[1]) || 0,
+          tfsa: parseFloat(row[2]) || 0,
+          normal: parseFloat(row[3]) || 0,
+          total: parseFloat(row[4]) || 0,
+        }))
+    } catch {
+      weeklySnapshots.value = []
+    } finally {
+      snapshotsLoading.value = false
+    }
+  }
+
   return {
     buckets,
     salary,
     hasContributionThisMonth,
     loading,
     error,
+    weeklySnapshots,
+    snapshotsLoading,
     fetchBalances,
     checkThisMonthContribution,
     logContribution,
+    fetchWeeklySnapshots,
   }
 })
