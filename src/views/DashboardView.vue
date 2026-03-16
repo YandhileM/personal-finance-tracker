@@ -1,6 +1,18 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useInvestmentsStore } from '../stores/investments.js'
+import { Line } from 'vue-chartjs'
+import {
+  Chart as ChartJS,
+  LineElement,
+  PointElement,
+  LinearScale,
+  CategoryScale,
+  Tooltip,
+  Legend,
+} from 'chart.js'
+
+ChartJS.register(LineElement, PointElement, LinearScale, CategoryScale, Tooltip, Legend)
 
 const store = useInvestmentsStore()
 
@@ -64,9 +76,72 @@ async function submitForm() {
   }
 }
 
+const chartData = computed(() => ({
+  labels: store.weeklySnapshots.map((s) => s.week),
+  datasets: [
+    {
+      label: 'Savings',
+      data: store.weeklySnapshots.map((s) => s.savings),
+      borderColor: '#2196F3',
+      backgroundColor: 'transparent',
+      pointRadius: 0,
+      tension: 0.3,
+    },
+    {
+      label: 'TFSA',
+      data: store.weeklySnapshots.map((s) => s.tfsa),
+      borderColor: '#4CAF50',
+      backgroundColor: 'transparent',
+      pointRadius: 0,
+      tension: 0.3,
+    },
+    {
+      label: 'Normal',
+      data: store.weeklySnapshots.map((s) => s.normal),
+      borderColor: '#FF9800',
+      backgroundColor: 'transparent',
+      pointRadius: 0,
+      tension: 0.3,
+    },
+    {
+      label: 'Total',
+      data: store.weeklySnapshots.map((s) => s.total),
+      borderColor: '#9E9E9E',
+      backgroundColor: 'transparent',
+      pointRadius: 0,
+      tension: 0.3,
+    },
+  ],
+}))
+
+const chartOptions = {
+  responsive: true,
+  maintainAspectRatio: false,
+  plugins: {
+    legend: { position: 'top' },
+    tooltip: {
+      callbacks: {
+        label: (ctx) =>
+          ` ${ctx.dataset.label}: R ${Number(ctx.parsed.y).toLocaleString('en-ZA', { minimumFractionDigits: 2 })}`,
+      },
+    },
+  },
+  scales: {
+    x: {
+      ticks: { maxTicksLimit: 8, maxRotation: 45 },
+    },
+    y: {
+      ticks: {
+        callback: (value) => `R ${Number(value).toLocaleString('en-ZA')}`,
+      },
+    },
+  },
+}
+
 onMounted(() => {
   store.fetchBalances()
   store.checkThisMonthContribution()
+  store.fetchWeeklySnapshots()
 })
 </script>
 
@@ -223,6 +298,30 @@ onMounted(() => {
             </v-col>
           </v-row>
         </v-form>
+      </v-card-text>
+    </v-card>
+
+    <!-- Weekly Growth chart -->
+    <v-card rounded="lg" elevation="2" class="mt-4">
+      <v-card-title class="pa-4 pb-0">
+        <v-icon icon="mdi-chart-line" class="mr-2" color="primary" />
+        Weekly Growth
+      </v-card-title>
+
+      <v-card-text class="pa-4">
+        <v-skeleton-loader v-if="store.snapshotsLoading" type="image" />
+
+        <v-alert
+          v-else-if="store.weeklySnapshots.length < 2"
+          type="info"
+          variant="tonal"
+        >
+          Graph will appear once you have 2 weeks of data.
+        </v-alert>
+
+        <div v-else style="height: 300px; position: relative;">
+          <Line :data="chartData" :options="chartOptions" />
+        </div>
       </v-card-text>
     </v-card>
 
