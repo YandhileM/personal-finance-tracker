@@ -1,14 +1,25 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { useTheme } from 'vuetify'
+import { useRouter, useRoute } from 'vue-router'
+import { clearAuth } from './services/auth.js'
 
 const theme = useTheme()
+const router = useRouter()
+const route = useRoute()
 const drawer = ref(false)
+
+const isLoginPage = computed(() => route.path === '/login')
 
 const isDark = computed(() => theme.global.name.value === 'dark')
 
 function toggleTheme() {
   theme.global.name.value = isDark.value ? 'light' : 'dark'
+}
+
+function logout() {
+  clearAuth()
+  router.push('/login')
 }
 
 const navItems = [
@@ -20,7 +31,7 @@ const navItems = [
 
 <template>
   <v-app>
-    <v-navigation-drawer v-model="drawer" temporary>
+    <v-navigation-drawer v-if="!isLoginPage" v-model="drawer" temporary>
       <v-list-item
         title="Finance Tracker"
         subtitle="Personal Finance"
@@ -58,10 +69,18 @@ const navItems = [
             />
           </template>
         </v-list-item>
+        <v-divider />
+        <v-list-item
+          prepend-icon="mdi-logout"
+          title="Logout"
+          base-color="error"
+          class="py-3"
+          @click="logout"
+        />
       </template>
     </v-navigation-drawer>
 
-    <v-app-bar elevation="1">
+    <v-app-bar v-if="!isLoginPage" elevation="1">
       <v-app-bar-nav-icon @click="drawer = !drawer" />
       <v-app-bar-title>Finance Tracker</v-app-bar-title>
     </v-app-bar>
