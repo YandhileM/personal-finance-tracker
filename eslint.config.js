@@ -21,6 +21,15 @@ export default defineConfig([
     },
   },
 
+  {
+    files: ['netlify/functions/**'],
+    languageOptions: {
+      globals: {
+        ...globals.node,
+      },
+    },
+  },
+
   js.configs.recommended,
   ...pluginVue.configs['flat/essential'],
 
