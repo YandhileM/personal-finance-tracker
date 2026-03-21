@@ -84,6 +84,14 @@ const spentPercent = computed(() => {
   return Math.min(100, Math.round((thisMonth.value.totalSpent / salary.value) * 100))
 })
 
+// ── True Remaining ────────────────────────────────────────────────────────────
+const trueRemaining = computed(() => {
+  const s = salary.value
+  const expenses = thisMonth.value?.totalSpent ?? 0
+  const contributions = investmentsStore.contributionsThisMonth
+  return s - expenses - contributions
+})
+
 // ── Category breakdown ────────────────────────────────────────────────────────
 const activeCategoryTotals = computed(() =>
   store.categoryTotals.filter((c) => c.totalSpent > 0),
@@ -198,6 +206,7 @@ const lineOptions = {
 onMounted(() => {
   store.fetchAll()
   if (!investmentsStore.salary) investmentsStore.fetchBalances()
+  investmentsStore.fetchContributionsThisMonth()
 })
 </script>
 
@@ -329,6 +338,43 @@ onMounted(() => {
         <v-alert v-else type="info" variant="tonal">
           No expense data found for this month.
         </v-alert>
+      </v-card-text>
+    </v-card>
+
+    <!-- True Remaining card -->
+    <v-card rounded="lg" elevation="2" class="mb-4">
+      <v-card-title class="pa-4 pb-0">
+        <v-icon icon="mdi-wallet" class="mr-2" color="primary" />
+        True Remaining
+      </v-card-title>
+
+      <v-card-text class="pa-4">
+        <v-skeleton-loader v-if="store.loading || investmentsStore.loading" type="list-item-three-line" />
+
+        <template v-else>
+          <div class="d-flex justify-space-between text-body-1 mb-2">
+            <span class="text-medium-emphasis">Salary</span>
+            <span>{{ formatZAR(salary) }}</span>
+          </div>
+          <div class="d-flex justify-space-between text-body-1 mb-2">
+            <span class="text-medium-emphasis">Minus expenses</span>
+            <span class="text-error">− {{ formatZAR(thisMonth?.totalSpent ?? 0) }}</span>
+          </div>
+          <div class="d-flex justify-space-between text-body-1 mb-3">
+            <span class="text-medium-emphasis">Minus contributions</span>
+            <span class="text-error">− {{ formatZAR(investmentsStore.contributionsThisMonth) }}</span>
+          </div>
+          <v-divider class="mb-3" />
+          <div class="d-flex justify-space-between align-center">
+            <span class="text-subtitle-1 font-weight-bold">True Remaining</span>
+            <span
+              class="text-h6 font-weight-bold"
+              :class="trueRemaining >= 0 ? 'text-success' : 'text-error'"
+            >
+              {{ formatZAR(trueRemaining) }}
+            </span>
+          </div>
+        </template>
       </v-card-text>
     </v-card>
 
