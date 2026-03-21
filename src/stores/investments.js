@@ -10,6 +10,7 @@ export const useInvestmentsStore = defineStore('investments', () => {
   const error = ref(null)
   const weeklySnapshots = ref([])
   const snapshotsLoading = ref(false)
+  const contributionsThisMonth = ref(0)
 
   async function fetchBalances() {
     loading.value = true
@@ -85,6 +86,21 @@ export const useInvestmentsStore = defineStore('investments', () => {
     }
   }
 
+  async function fetchContributionsThisMonth() {
+    try {
+      const rows = await readRange('Transactions!A:E')
+      console.log('Transactions rows:', rows)
+      const key = `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}`
+      contributionsThisMonth.value = rows.reduce((sum, row) => {
+        if (!row[0] || !String(row[0]).startsWith(key)) return sum
+        if (row[2] !== 'Contribution') return sum
+        return sum + (Number(row[3]) || 0)
+      }, 0)
+    } catch {
+      contributionsThisMonth.value = 0
+    }
+  }
+
   return {
     buckets,
     salary,
@@ -93,9 +109,11 @@ export const useInvestmentsStore = defineStore('investments', () => {
     error,
     weeklySnapshots,
     snapshotsLoading,
+    contributionsThisMonth,
     fetchBalances,
     checkThisMonthContribution,
     logContribution,
     fetchWeeklySnapshots,
+    fetchContributionsThisMonth,
   }
 })
