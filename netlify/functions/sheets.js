@@ -1,5 +1,10 @@
 /* eslint-env node */
 const { google } = require('googleapis')
+const crypto = require('crypto')
+
+function verifyToken(token) {
+  return typeof token === 'string' && /^[0-9a-f]{64}$/.test(token)
+}
 
 const auth = new google.auth.GoogleAuth({
   credentials: {
@@ -14,12 +19,19 @@ const spreadsheetId = process.env.VITE_SPREADSHEET_ID
 exports.handler = async (event) => {
   const headers = {
     'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Headers': 'Content-Type',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
     'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
   }
 
   if (event.httpMethod === 'OPTIONS') {
     return { statusCode: 200, headers, body: '' }
+  }
+
+  const authHeader = event.headers['authorization'] || event.headers['Authorization'] || ''
+  const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null
+
+  if (!verifyToken(token)) {
+    return { statusCode: 401, headers, body: JSON.stringify({ error: 'Unauthorized' }) }
   }
 
   try {
